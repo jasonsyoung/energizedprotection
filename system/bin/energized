@@ -364,31 +364,35 @@ function check_root {
 function apply_pack {
     if [ $# -gt 0 ]; then
         DIR="$1"
-	fi
-	echoer ""
-	wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/$DIR
-	gzip -d -c $SHOST >$HOST
-	rm -f $SHOST
-	echoer -e $G'[+] Done Applying!'$N
-	sleeper 0.5
-	echoer -e $W'[+] Make sure to reboot once after applying.'$N
-	sleeper 0.5
-	echoer -e $Y"$divider"$N
-	grep "Version Code" $TREADME >$FILTER
-	sleeper 0.5
-	CURRENT=$(grep "Version Code" $TREADME)
-	LAST_UPDATED=$(sed '1q;d' $FILTER)
-	if [ "$LAST_UPDATED" != "$CURRENT" ]; then
-		rm -f $DFILTER
-		touch $DFILTER
-	fi
-	echoer -e $W'[+] Returning...'$N
-	sleeper 0.5
-	clearer
+    fi
+    echoer ""
+    wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/$DIR
+    gzip -d -c $SHOST >$HOST
+    rm -f $SHOST
+    echoer -e $G'[+] Done Applying!'$N
+    sleeper 0.5
+    echoer -e $W'[+] Make sure to reboot once after applying.'$N
+    sleeper 0.5
+    echoer -e $Y"$divider"$N
+    grep "Version Code" $TREADME >$FILTER
+    sleeper 0.5
+    CURRENT=$(grep "Version Code" $TREADME)
+    LAST_UPDATED=$(sed '1q;d' $FILTER)
+    if [ "$LAST_UPDATED" != "$CURRENT" ]; then
+        rm -f $DFILTER
+        touch $DFILTER
+    fi
+    echoer -e $W'[+] Returning...'$N
+    sleeper 0.5
+    clearer
     DIR=""
     COUNT=$((COUNT + 1))
     clearer
     reset
+}
+
+function apply_extension {
+    
 }
 
 function check_delta {
@@ -940,8 +944,11 @@ while true; do
                 echoer -e $W"device can't handle the load.)"$N
                 echoer ''
                 sleeper 0.1
-                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
-                read -p "$prompt" answer
+                answer=Y
+                if $INTERACTIVE; then
+                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    read -p "$prompt" answer
+                fi
                 if [ "$answer" == "Y" ]; then
                     echoer "[+] Applying Energized Unified..."
                     DIR="master/unified/formats/hosts.gz"
@@ -980,8 +987,11 @@ while true; do
                 echoer -e $W"device can't handle the load.)"$N
                 echoer ''
                 sleeper 0.1
-                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
-                read -p "$prompt" answer
+                answer=Y
+                if $INTERACTIVE; then
+                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    read -p "$prompt" answer
+                fi
                 if [ "$answer" == "Y" ]; then
                     clearer
                     echoer -e $Y"$divider"$N
