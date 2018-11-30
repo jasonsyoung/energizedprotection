@@ -7,7 +7,7 @@
 # Script Begins -
 # ========================================
 
-function show_help() {
+show_help () {
     echo "Usage:"
     echo "energized                               Run interactively."
     echo "energized -h, --help                    Display this help message."
@@ -23,49 +23,52 @@ function show_help() {
 }
 
 # Check if we have arguments to parse
-INTERACTIVE=[ $# -gt 0 ]
+INTERACTIVE=true
+if [ $# -gt 0 ]; then
+    INTERACTIVE=false
+fi
 
-function echoer() {
+echoer () {
     $INTERACTIVE && echo "$@"
     return 0
 }
 
-function errorer {
+errorer () {
     $INTERACTIVE && echo "$@" >&2
     return 0
 }
 
-function sleeper {
+sleeper () {
     $INTERACTIVE && sleep "$@"
     return 0
 }
 
-function clearer {
+clearer () {
     $INTERACTIVE && clear
     return 0
 }
 
 # Colors
 # ----------------------------------------
-BL='\e[01;90m' >/dev/null 2>&1 # Black
-R='\e[01;91m' >/dev/null 2>&1  # Red
-G='\e[01;92m' >/dev/null 2>&1  # Green
-Y='\e[01;93m' >/dev/null 2>&1  # Yellow
-B='\e[01;94m' >/dev/null 2>&1  # Blue
-P='\e[01;95m' >/dev/null 2>&1  # Purple
-C='\e[01;96m' >/dev/null 2>&1  # Cyan
-W='\e[01;97m' >/dev/null 2>&1  # White
-LG='\e[01;37m' >/dev/null 2>&1 # Light Gray
-N='\e[0m' >/dev/null 2>&1      # Null
+export BL='\e[01;90m' >/dev/null 2>&1 # Black
+export R='\e[01;91m' >/dev/null 2>&1  # Red
+export G='\e[01;92m' >/dev/null 2>&1  # Green
+export Y='\e[01;93m' >/dev/null 2>&1  # Yellow
+export B='\e[01;94m' >/dev/null 2>&1  # Blue
+export P='\e[01;95m' >/dev/null 2>&1  # Purple
+export C='\e[01;96m' >/dev/null 2>&1  # Cyan
+export W='\e[01;97m' >/dev/null 2>&1  # White
+export LG='\e[01;37m' >/dev/null 2>&1 # Light Gray
+export N='\e[0m' >/dev/null 2>&1      # Null
 # ----------------------------------------
 
 # Define Energized Protection Directory
 # ----------------------------------------
 DIRECTORY=/sdcard/EnergizedProtection
 
-rm -f $DIRECTORY/filter &>/dev/null      || errorer "Failed to remove $DIRECTORY/filter"
-rm -f $DIRECTORY/deltaFilter &>/dev/null || errorer "Failed to remove $DIRECTORY/deltaFilter"
-rm -f $DIRECTORY/deltaReadme &>/dev/null || errorer "Failed to remove $DIRECTORY/deltaReadme"
+rm -f $DIRECTORY/filter 1>&2 2>/dev/null      || errorer "Failed to remove $DIRECTORY/filter"
+rm -f $DIRECTORY/deltaFilter 1>&2 2>/dev/null || errorer "Failed to remove $DIRECTORY/deltaFilter"
+rm -f $DIRECTORY/deltaReadme 1>&2 2>/dev/null || errorer "Failed to remove $DIRECTORY/deltaReadme"
 
 # Divider
 # ----------------------------------------
@@ -172,10 +175,15 @@ fi
 # Check if the Systemless Hosts
 # ----------------------------------------
 HOST=/sbin/.magisk/img/hosts/system/etc/hosts
+
 # Check for old non-module-style Systemless Hosts and update path
-if [[ "$(/sbin/magisk -c)" == 17.3* ]]; then
-    HOST=/sbin/.core/img/.core/hosts
-fi
+MAGISK_VERSION="$(/sbin/magisk -c)"
+case "$MAGISK_VERSION" in
+    "17.3"*) 
+        HOST=/sbin/.core/img/.core/hosts
+    ;;
+esac
+
 if [ ! -f $HOST ]; then
     clearer
     sleeper 0.1
@@ -216,7 +224,7 @@ if [ -d /data/data/org.adaway/ ] || [ -d /system/app/org.adaway/ ] || [ -d /syst
     echoer ''
     echoer -e $Y"[+] Make sure to disable them, to avoid any issue using Energized!"$N
     sleeper 2
-    elif [ -d /data/data/ru.dixl0f0s.unifiedhostsmanager/ ] || [ -d /system/app/ru.dixl0f0s.unifiedhostsmanager/] || [ -d /system/priv-app/ru.dixl0f0s.unifiedhostsmanager/ ]; then
+elif [ -d /data/data/ru.dixl0f0s.unifiedhostsmanager/ ] || [ -d /system/app/ru.dixl0f0s.unifiedhostsmanager/ ] || [ -d /system/priv-app/ru.dixl0f0s.unifiedhostsmanager/ ]; then
     clearer
     echoer -e $R"[-] Other adblocker is detected!"$N
     sleeper 0.3
@@ -344,7 +352,7 @@ size="\e[1;35m$(ls -lah $HOST | awk '{print $5}')\e[0m"
 
 # Functions
 # ------------------------------------
-function check_root {
+check_root () {
     id="$(id)"
     id="${id#*=}"
     id="${id%%\(*}"
@@ -362,7 +370,7 @@ function check_root {
     return 0
 }
 
-function apply_pack {
+apply_pack () {
     if [ $# -gt 0 ]; then
         DIR="$1"
     fi
@@ -392,8 +400,8 @@ function apply_pack {
     reset
 }
 
-function apply_extension {
-    local extension_url="$1"
+apply_extension () {
+    extension_url="$1"
     wget --no-check-certificate -O $SHOST "$extension_url"
     gzip -d -c $SHOST >$PTEMP
     mv $HOST $TEMP
@@ -403,7 +411,7 @@ function apply_extension {
     rm -f $TEMP $PTEMP $SHOST
 }
 
-function check_delta {
+check_delta () {
     wget --no-check-certificate -q -O $DREADME https://raw.githubusercontent.com/AdroitAdorKhan/Energized/master/core/delta-patchset/blacklist
     grep -q "#" $DREADME
     if [ -f $DFILTER ]; then
@@ -421,7 +429,7 @@ function check_delta {
     fi
 }
 
-function restore_hosts {
+restore_hosts () {
     if [ -s $HBP ]; then
         echoer -e $G'[+] Restoring...'$N
         gzip -d -c $HBP >$HOST
@@ -436,7 +444,7 @@ function restore_hosts {
     fi
 }
 
-function clear_hosts {
+clear_hosts () {
     truncate -s 0 $HOST
     rm -f $FILTER
     rm -f $DFILTER
@@ -444,13 +452,13 @@ function clear_hosts {
     touch $DFILTER
 }
 
-function backup_hosts {
+backup_hosts () {
     gzip -9 -c $HOST >$HBP
     cp $FILTER $BFILTER
     cp $DFILTER $BDFILTER
 }
 
-function update_hosts {
+update_hosts () {
     clearer
     if [ "$autopack" == "null" ]; then
         if $INTERACTIVE; then
@@ -601,22 +609,22 @@ while true; do
     if busybox grep -q "E84S1C-P" $HOST; then
         echeck="\e[1;32mBasic Protection\e[0m"
         autopack="basic"
-        elif busybox grep -q "E5P4RK-P" $HOST; then
+    elif busybox grep -q "E5P4RK-P" $HOST; then
         echeck="\e[1;32mSpark Protection\e[0m"
         autopack="spark"
-        elif busybox grep -q "E8LU-P" $HOST; then
+    elif busybox grep -q "E8LU-P" $HOST; then
         echeck="\e[1;32mBlu Protection\e[0m"
         autopack="blu"
-        elif busybox grep -q "E8LUG0-P" $HOST; then
+    elif busybox grep -q "E8LUG0-P" $HOST; then
         echeck="\e[1;32mBlu Go Protection\e[0m"
         autopack="bluGo"
-        elif busybox grep -q "EP0R9-P" $HOST; then
+    elif busybox grep -q "EP0R9-P" $HOST; then
         echeck="\e[1;32mPorn Protection\e[0m"
         autopack="porn"
-        elif busybox grep -q "EUL71M473-P" $HOST; then
+    elif busybox grep -q "EUL71M473-P" $HOST; then
         echeck="\e[1;32mUltimate Protection\e[0m"
         autopack="ultimate"
-        elif busybox grep -q "EU91F13D-P" $HOST; then
+    elif busybox grep -q "EU91F13D-P" $HOST; then
         echeck="\e[1;32mUnified Protection\e[0m"
         autopack="unified"
     else
@@ -882,7 +890,7 @@ while true; do
                 echoer -e $W"device can't handle the load.)"$N
                 echoer ''
                 sleeper 0.1
-                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N:' ')
                 read -p "$prompt" answer
                 if [ "$answer" == "Y" ]; then
                     echoer "[+] Applying Energized Basic..."
@@ -921,7 +929,7 @@ while true; do
                 echoer -e $W"device can't handle the load.)"$N
                 echoer ''
                 sleeper 0.1
-                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N:' ')
                 read -p "$prompt" answer
                 if [ "$answer" == "Y" ]; then
                     echoer "[+] Applying Energized Ultimate..."
@@ -962,7 +970,7 @@ while true; do
                 sleeper 0.1
                 answer=Y
                 if $INTERACTIVE; then
-                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N:' ')
                     read -p "$prompt" answer
                 fi
                 if [ "$answer" == "Y" ]; then
@@ -1005,7 +1013,7 @@ while true; do
                 sleeper 0.1
                 answer=Y
                 if $INTERACTIVE; then
-                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N:' ')
                     read -p "$prompt" answer
                 fi
                 if [ "$answer" == "Y" ]; then
@@ -1102,7 +1110,7 @@ while true; do
                 echoer -e $W"website(s)."$N
                 echoer ''
                 sleeper 0.1
-                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                prompt=$(echo -n -e $W'[+] PROCEED?'$N $Y'[Y/N]'$N:' ')
                 read -p "$prompt" answer
                 if [ "$answer" == "Y" ]; then
                     clearer
@@ -1207,7 +1215,7 @@ while true; do
                     prompt=$(echo -n -e $W'[+] Enter Domain Name Only:'$N $iw)
                     read -p "$prompt" iw
                     echoer -e $W'[+] Your Domain'$N $Y"$iw"$N
-                    prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                     read -p "$prompt" answer
                     if [ "$answer" == "Y" ]; then
                         echoer "[+] Applying $iw as whitelist..."
@@ -1220,14 +1228,14 @@ while true; do
                         sleeper 0.5
                         echoer -e $W'[+] Returning...'$N
                         sleeper 1
-                        prompt=$(echo -n -e $W'[+] Whitelist Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Whitelist Another Domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
                         fi
                     else
                         clearer
-                        prompt=$(echo -n -e $W'[+] Whitelist Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Whitelist Another Domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
@@ -1319,7 +1327,7 @@ while true; do
                     read -p "$prompt" ib
                     if [ ! "$(grep -x "$curip$ib" $HOST)" ]; then
                         echoer -e $W'[+] Your Domain(s)'$N $Y"$ib"$N
-                        prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                         read -p "$prompt" answer
                         if [ "$answer" == "Y" ]; then
                             echoer "[+] Applying $ib as blacklist..."
@@ -1334,7 +1342,7 @@ while true; do
                             sleeper 0.5
                             echoer -e $W'[+] Returning...'$N
                             sleeper 0.4
-                            prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                            prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N:' ')
                             read -p "$prompt" answer
                             if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                                 break
@@ -1342,7 +1350,7 @@ while true; do
                             clearer
                         else
                             clearer
-                            prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                            prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N:' ')
                             read -p "$prompt" answer
                             if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                                 break
@@ -1359,7 +1367,7 @@ while true; do
                     else
                         echoer -e $G'[+] Domain was already being added to the hosts!'$N
                         sleeper 1
-                        prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Blacklist Another Domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
@@ -1392,7 +1400,7 @@ while true; do
                             prompt=$(echo -n -e $W'[+] Enter IP (v4 or v6):'$N $ip)
                             read -p "$prompt" ip
                             echoer -e $W'[+] Your IP:'$N $Y"$ip"$N
-                            prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                            prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                             read -p "$prompt" answer
                             if [ "$answer" == "Y" ]; then
                                 echoer -e $W'[+] Redirecting...'$N
@@ -1454,7 +1462,7 @@ while true; do
                     prompt=$(echo -n -e $W'[+] Enter Domain Name Only:'$N $iw)
                     read -p "$prompt" iw
                     echoer -e $W'[+] Your Domain'$N $Y"$iw"$N
-                    prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                    prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                     read -p "$prompt" answer
                     if [ "$answer" == "Y" ]; then
                         grep -Fvx "$curip$iw" $HOST >$TEMP
@@ -1463,7 +1471,7 @@ while true; do
                         prompt=$(echo -n -e $W'[+] Enter IP (v4 or v6):'$N $ip)
                         read -p "$prompt" ip
                         echoer -e $W'[+] Your IP'$N $Y"$ip"$N
-                        prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                         read -p "$prompt" answer
                         if [ "$answer" == "Y" ]; then
                             echoer -e "\n$ip $iw" >>$HOST
@@ -1477,14 +1485,14 @@ while true; do
                         sleeper 0.5
                         echoer -e $W'[+] Returning...'$N
                         sleeper 1
-                        prompt=$(echo -n -e $W'[+] Redirect Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Redirect Another Domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
                         fi
                     else
                         clearer
-                        prompt=$(echoer -n -e $W'[+] Redirect Another Domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echoer -n -e $W'[+] Redirect Another Domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
@@ -1682,7 +1690,7 @@ while true; do
                 prompt=$(echo -n -e $W'[+] Enter Redirection IP:'$N $ip)
                 read -p "$prompt" ip
                 echoer -e $W'[+] Your Redirection IP'$N $Y"$ip"$N
-                prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                prompt=$(echo -n -e $W'[+] Are you sure?'$N $Y'[Y/N]'$N:' ')
                 read -p "$prompt" answer
                 if [ "$answer" == "Y" ]; then
                     echoer "[+] Adding $ip as redirection IP..."
@@ -1729,7 +1737,7 @@ while true; do
                     if [ ! "$(grep -x "$curip$domain" $HOST)" ]; then
                         echoer -e $R"[×] $domain - "$N$W"is not in the list!"$N
                         sleeper 1
-                        prompt=$(echo -n -e $W'[+] Want to block the domain?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Want to block the domain?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "Y" || "$answer" == "y" ]]; then
                             echoer "[+] Applying $domain as blacklist..."
@@ -1744,14 +1752,14 @@ while true; do
                             sleeper 0.5
                             echoer -e $W'[+] Returning...'$N
                             sleeper 1
-                            prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[Y/N]'$N: $G"$answer"$N)
+                            prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[Y/N]'$N:' ')
                             read -p "$prompt" answer
                             if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                                 break
                             fi
                             clearer
                         else
-                            prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                            prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[y/n]'$N:' ')
                             read -p "$prompt" answer
                             if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                                 break
@@ -1762,7 +1770,7 @@ while true; do
                     else
                         echoer -e $G"[✓] $domain - "$N$W"is in the list!"$N
                         sleeper 1
-                        prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[y/n]'$N: $G"$answer"$N)
+                        prompt=$(echo -n -e $W'[+] Check Again?'$N $Y'[y/n]'$N:' ')
                         read -p "$prompt" answer
                         if [[ "$answer" == "N" || "$answer" == "n" ]]; then
                             break
