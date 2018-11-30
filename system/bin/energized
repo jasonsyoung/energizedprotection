@@ -13,12 +13,13 @@ function show_help() {
     echo "energized -h, --help                    Display this help message."
     echo "energized -u, --update                  Update lists."
     echo "energized -b, --backup                  Create a backup."
-    echo "energized -c, --clearer                   Create a backup and clearer hosts."
+    echo "energized -c, --clear                   Create a backup and clear hosts."
     echo "energized -r, --restore                 Restore a backup if one exists."
     echo "energized -a, --apply <pack>            Apply a pack by number."
     echo "energized -e, --extension <code>        Apply an extension by code."
-    echo "energized -w, --whitelist <domain ...>  Whitelist domain(s)."
-    echo "energized -m, --blacklist <domain ...>  Blacklist domain(s)."
+    # TODO
+    # echo "energized -w, --whitelist <domain ...>  Whitelist domain(s)."
+    # echo "energized -m, --blacklist <domain ...>  Blacklist domain(s)."
 }
 
 # Check if we have arguments to parse
@@ -392,7 +393,14 @@ function apply_pack {
 }
 
 function apply_extension {
-    
+    local extension_url="$1"
+    wget --no-check-certificate -O $SHOST "$extension_url"
+    gzip -d -c $SHOST >$PTEMP
+    mv $HOST $TEMP
+    rm -f $HOST
+    cat $TEMP $PTEMP >$HOST
+    awk '!a[$0]++' $HOST >$PTEMP && mv -f $PTEMP $HOST
+    rm -f $TEMP $PTEMP $SHOST
 }
 
 function check_delta {
@@ -434,6 +442,12 @@ function clear_hosts {
     rm -f $DFILTER
     touch $FILTER
     touch $DFILTER
+}
+
+function backup_hosts {
+    gzip -9 -c $HOST >$HBP
+    cp $FILTER $BFILTER
+    cp $DFILTER $BDFILTER
 }
 
 function update_hosts {
@@ -815,8 +829,10 @@ while true; do
             echoer -e $G'[si] Submit Issue         '$N$R'[q] Quit.'$N
             # Read Input
             # ----------------------------------------
-            local prompt=$(echo -e $Y'[+] Your Input'$N" - ")
-            read -p "$prompt" -r INPUT
+            if $INTERACTIVE; then
+                prompt=$(echo -e $Y'[+] Your Input'$N" - ")
+                read -p "$prompt" -r INPUT
+            fi
             if [ "$INPUT" != "m" ]; then
                 INPUT="$(echo "$INPUT" | sed 's/m//g')"
                 clearer
@@ -1002,14 +1018,8 @@ while true; do
                     echoer "Adds Porn Blocking Pack to current hosts."
                     echoer -e $Y"$divider"$N
                     echoer ""
-                    wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/master/porn/formats/hosts.gz
                     echoer "[+] Applying Porn Hosts to current hosts."
-                    gzip -d -c $SHOST >$PTEMP
-                    mv $HOST $TEMP
-                    rm -f $HOST
-                    cat $TEMP $PTEMP >$HOST
-                    awk '!a[$0]++' $HOST >$PTEMP && mv -f $PTEMP $HOST
-                    rm -f $TEMP $PTEMP $SHOST
+                    apply_extension "https://raw.githubusercontent.com/EnergizedProtection/block/master/porn/formats/hosts.gz"
                     echoer -e $G'[+] Done!'$N
                     echoer "[+] Returning..."
                 else
@@ -1036,14 +1046,8 @@ while true; do
                 echoer "Adds Porn Lite Blocking Pack to current hosts."
                 echoer -e $Y"$divider"$N
                 echoer ""
-                wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/porn-lite/formats/hosts.gz
                 echoer "[+] Applying Porn Lite Hosts to current hosts."
-                gzip -d -c $SHOST >$PTEMP
-                mv $HOST $TEMP
-                rm -f $HOST
-                cat $TEMP $PTEMP >$HOST
-                awk '!a[$0]++' $HOST >$PTEMP && mv -f $PTEMP $HOST
-                rm -f $TEMP $PTEMP $SHOST
+                apply_extension "https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/porn-lite/formats/hosts.gz"
                 echoer -e $G'[+] Done!'$N
                 echoer "[+] Returning..."
             ;;
@@ -1059,13 +1063,8 @@ while true; do
                 echoer "Adds Regional Blocking Pack to current hosts."
                 echoer -e $Y"$divider"$N
                 echoer ""
-                wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/regional/formats/hosts.gz
                 echoer "[+] Applying Regional Hosts to current hosts."
-                gzip -d -c $SHOST >$STEMP
-                mv $HOST $TEMP
-                cat $TEMP $STEMP >$HOST
-                awk '!a[$0]++' $HOST >$STEMP && mv -f $STEMP $HOST
-                rm -f $TEMP $STEMP $SHOST
+                apply_extension "https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/regional/formats/hosts.gz"
                 echoer -e $G'[+] Done!'$N
                 echoer "[+] Returning..."
             ;;
@@ -1081,13 +1080,8 @@ while true; do
                 echoer "Adds Social Blocking Pack to current hosts."
                 echoer -e $Y"$divider"$N
                 echoer ""
-                wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/social/formats/hosts.gz
                 echoer "[+] Applying Social Hosts to current hosts."
-                gzip -d -c $SHOST >$STEMP
-                mv $HOST $TEMP
-                cat $TEMP $STEMP >$HOST
-                awk '!a[$0]++' $HOST >$STEMP && mv -f $STEMP $HOST
-                rm -f $TEMP $STEMP $SHOST
+                apply_extension "https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/social/formats/hosts.gz"
                 echoer -e $G'[+] Done!'$N
                 echoer "[+] Returning..."
             ;;
@@ -1120,14 +1114,8 @@ while true; do
                     echoer "Adds Xtreme Blocking Pack to current hosts."
                     echoer -e $Y"$divider"$N
                     echoer ""
-                    wget --no-check-certificate -O $SHOST https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/xtreme/formats/hosts.gz
                     echoer "[+] Applying Xtreme Hosts to current hosts."
-                    gzip -d -c $SHOST >$PTEMP
-                    mv $HOST $TEMP
-                    rm -f $HOST
-                    cat $TEMP $PTEMP >$HOST
-                    awk '!a[$0]++' $HOST >$PTEMP && mv -f $PTEMP $HOST
-                    rm -f $TEMP $PTEMP $SHOST
+                    apply_extension "https://raw.githubusercontent.com/EnergizedProtection/block/master/extensions/xtreme/formats/hosts.gz"
                     echoer -e $G'[+] Done!'$N
                     echoer "[+] Returning..."
                 else
@@ -1565,9 +1553,7 @@ while true; do
                 echoer -e $Y"$divider"$N
                 echoer ""
                 echoer -e $G'[+] Backup In Process...'$N
-                gzip -9 -c $HOST >$HBP
-                cp $FILTER $BFILTER
-                cp $DFILTER $BDFILTER
+                backup_hosts
                 sleeper 0.5
                 echoer -e $W'[+] Done!'$N
                 sleeper 0.5
